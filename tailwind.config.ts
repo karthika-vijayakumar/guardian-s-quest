@@ -46,6 +46,10 @@ export default {
           DEFAULT: "hsl(var(--rest))",
           foreground: "hsl(var(--rest-foreground))",
         },
+        progress: {
+          DEFAULT: "hsl(var(--progress))",
+          foreground: "hsl(var(--progress-foreground))",
+        },
         power: {
           DEFAULT: "hsl(var(--power))",
           low: "hsl(var(--power-low))",

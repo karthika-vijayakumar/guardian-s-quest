@@ -1,56 +1,49 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Shield, Swords, Clock, Sparkles } from "lucide-react";
 import { GameButton } from "@/components/ui/game-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useGame } from "@/context/GameContext";
+import CloudsBackground from "@/components/CloudsBackground";
 import warriorActive from "@/assets/warrior-active.png";
 
-const HomePage = () => {
-  const navigate = useNavigate();
-  const { setTask, setFocusMinutes, startMission } = useGame();
+interface HomeSectionProps {
+  onStartMission: (task: string, minutes: number) => void;
+}
+
+const HomeSection = ({ onStartMission }: HomeSectionProps) => {
   const [taskInput, setTaskInput] = useState("");
   const [timeInput, setTimeInput] = useState(25);
+  const [isStarting, setIsStarting] = useState(false);
 
-  const handleStartMission = () => {
+  const handleStart = () => {
     if (!taskInput.trim()) return;
-    setTask(taskInput);
-    setFocusMinutes(timeInput);
-    startMission();
-    navigate("/game");
+    setIsStarting(true);
+    setTimeout(() => {
+      onStartMission(taskInput, timeInput);
+      setIsStarting(false);
+    }, 500);
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
-      {/* Floating decorative elements */}
-      <motion.div
-        className="fixed top-10 left-10 text-4xl opacity-20"
-        animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
-        transition={{ duration: 4, repeat: Infinity }}
-      >
-        ⚔️
-      </motion.div>
-      <motion.div
-        className="fixed bottom-20 right-10 text-4xl opacity-20"
-        animate={{ y: [0, 10, 0], rotate: [0, -5, 0] }}
-        transition={{ duration: 5, repeat: Infinity }}
-      >
-        🛡️
-      </motion.div>
+    <section
+      id="home"
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-20 sky-section relative"
+    >
+      <CloudsBackground />
 
-      {/* Main content */}
       <motion.div
-        className="game-card w-full max-w-md mx-auto text-center space-y-8"
+        className="game-card w-full max-w-md mx-auto text-center space-y-8 relative z-10"
         initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
         transition={{ duration: 0.6 }}
       >
         {/* Logo and Title */}
         <motion.div
           initial={{ scale: 0.8 }}
-          animate={{ scale: 1 }}
+          whileInView={{ scale: 1 }}
+          viewport={{ once: true }}
           transition={{ delay: 0.2, type: "spring" }}
         >
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -68,20 +61,35 @@ const HomePage = () => {
         <motion.div
           className="relative"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
           transition={{ delay: 0.4 }}
         >
           <motion.img
             src={warriorActive}
             alt="Your Guardian"
-            className="w-40 h-40 mx-auto float-animation"
+            className={`w-40 h-40 mx-auto ${isStarting ? "animate-battle-stance" : "float-animation"}`}
           />
+          {/* Sparkles near sword */}
           <motion.div
-            className="absolute -top-2 right-1/4"
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute top-4 right-1/4"
+            animate={{ 
+              scale: [1, 1.3, 1],
+              opacity: [0.5, 1, 0.5]
+            }}
+            transition={{ duration: 3, repeat: Infinity }}
           >
             <Sparkles className="w-6 h-6 text-accent" />
+          </motion.div>
+          <motion.div
+            className="absolute bottom-8 left-1/4"
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.3, 0.8, 0.3]
+            }}
+            transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
+          >
+            <Sparkles className="w-5 h-5 text-primary" />
           </motion.div>
         </motion.div>
 
@@ -89,7 +97,8 @@ const HomePage = () => {
         <motion.div
           className="space-y-6"
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
           transition={{ delay: 0.5 }}
         >
           {/* Task input */}
@@ -128,12 +137,12 @@ const HomePage = () => {
           {/* Start button */}
           <GameButton
             size="lg"
-            className="w-full"
-            onClick={handleStartMission}
-            disabled={!taskInput.trim()}
+            className="w-full group"
+            onClick={handleStart}
+            disabled={!taskInput.trim() || isStarting}
           >
-            <Swords className="w-6 h-6" />
-            Start Mission
+            <Swords className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+            {isStarting ? "Preparing..." : "Start Mission"}
           </GameButton>
         </motion.div>
 
@@ -141,14 +150,15 @@ const HomePage = () => {
         <motion.p
           className="text-sm text-muted-foreground"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
           transition={{ delay: 0.8 }}
         >
           💡 Your Guardian fights best when you stay focused!
         </motion.p>
       </motion.div>
-    </div>
+    </section>
   );
 };
 
-export default HomePage;
+export default HomeSection;
