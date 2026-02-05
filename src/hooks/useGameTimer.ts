@@ -32,6 +32,14 @@ const useGameTimer = ({
   const [isPaused, setIsPaused] = useState(false);
   const halfwayTriggered = useRef(false);
   const completeTriggered = useRef(false);
+  const onHalfwayRef = useRef(onHalfway);
+  const onCompleteRef = useRef(onComplete);
+
+  // Keep refs updated
+  useEffect(() => {
+    onHalfwayRef.current = onHalfway;
+    onCompleteRef.current = onComplete;
+  }, [onHalfway, onComplete]);
 
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -48,13 +56,13 @@ const useGameTimer = ({
           // Check halfway point
           if (!halfwayTriggered.current && newValue <= totalInitialSeconds / 2) {
             halfwayTriggered.current = true;
-            onHalfway?.();
+            onHalfwayRef.current?.();
           }
           
           // Check completion
           if (!completeTriggered.current && newValue <= 0) {
             completeTriggered.current = true;
-            onComplete?.();
+            onCompleteRef.current?.();
           }
           
           return Math.max(0, newValue);
@@ -65,7 +73,7 @@ const useGameTimer = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning, isPaused, totalSeconds, totalInitialSeconds, onHalfway, onComplete]);
+  }, [isRunning, isPaused, totalSeconds, totalInitialSeconds]);
 
   const start = useCallback(() => {
     setIsRunning(true);

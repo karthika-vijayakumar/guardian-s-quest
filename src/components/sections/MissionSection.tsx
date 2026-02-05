@@ -1,13 +1,13 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Swords, Pause, Play, Trophy } from "lucide-react";
+import { Swords, Pause, Play, StopCircle, Trophy } from "lucide-react";
 import { GameButton } from "@/components/ui/game-button";
 import WarriorCharacter from "@/components/WarriorCharacter";
 import TimerDisplay from "@/components/TimerDisplay";
 import PowerBar from "@/components/PowerBar";
 import StatusMessage from "@/components/StatusMessage";
-import { useGame } from "@/context/GameContext";
+import MonsterBattle from "@/components/MonsterBattle";
+import CloudsBackground from "@/components/CloudsBackground";
 import useGameTimer from "@/hooks/useGameTimer";
 
 const statusMessages = [
@@ -15,85 +15,109 @@ const statusMessages = [
   "Crushing procrastination!",
   "Guardian is on fire!",
   "Stay focused, warrior!",
-  "Enemies are retreating!"
+  "Enemies are retreating!",
 ];
 
-const GamePage = () => {
-  const navigate = useNavigate();
-  const { gameState, endMission } = useGame();
+interface MissionSectionProps {
+  isActive: boolean;
+  task: string;
+  focusMinutes: number;
+  onHalfway: () => void;
+  onComplete: () => void;
+  onEnd: () => void;
+}
+
+const MissionSection = ({
+  isActive,
+  task,
+  focusMinutes,
+  onHalfway,
+  onComplete,
+  onEnd,
+}: MissionSectionProps) => {
   const [currentStatus, setCurrentStatus] = useState(statusMessages[0]);
   const [showTiredMessage, setShowTiredMessage] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const statusIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Redirect if no task set
-  useEffect(() => {
-    if (!gameState.task) {
-      navigate("/");
-    }
-  }, [gameState.task, navigate]);
+  const halfwayTriggeredRef = useRef(false);
 
   const handleHalfway = () => {
+    if (halfwayTriggeredRef.current) return;
+    halfwayTriggeredRef.current = true;
     setShowTiredMessage(true);
     setCurrentStatus("Guardian getting tired…");
-    
-    // Clear status rotation
+
     if (statusIntervalRef.current) {
       clearInterval(statusIntervalRef.current);
     }
-    
-    // Redirect after 3 seconds
-    redirectTimeoutRef.current = setTimeout(() => {
-      navigate("/rest");
+
+    setTimeout(() => {
+      onHalfway();
     }, 3000);
   };
 
   const handleComplete = () => {
     setIsComplete(true);
-    endMission();
     if (statusIntervalRef.current) {
       clearInterval(statusIntervalRef.current);
     }
+    onComplete();
   };
 
   const timer = useGameTimer({
-    initialMinutes: gameState.focusMinutes || 1,
+    initialMinutes: focusMinutes || 1,
     onHalfway: handleHalfway,
     onComplete: handleComplete,
-    autoStart: true
+    autoStart: isActive,
   });
 
-  // Calculate power based on time progress
   const power = 100 - timer.progress;
 
   // Rotate status messages
   useEffect(() => {
-    if (!showTiredMessage && !isComplete) {
+    if (!showTiredMessage && !isComplete && isActive) {
       statusIntervalRef.current = setInterval(() => {
-        setCurrentStatus(statusMessages[Math.floor(Math.random() * statusMessages.length)]);
+        setCurrentStatus(
+          statusMessages[Math.floor(Math.random() * statusMessages.length)]
+        );
       }, 4000);
     }
 
     return () => {
       if (statusIntervalRef.current) clearInterval(statusIntervalRef.current);
-      if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
     };
-  }, [showTiredMessage, isComplete]);
+  }, [showTiredMessage, isComplete, isActive]);
+
+  // Reset state when mission becomes active again
+  useEffect(() => {
+    if (isActive && !timer.isRunning) {
+      timer.start();
+    }
+  }, [isActive]);
 
   const getWarriorState = () => {
     if (showTiredMessage) return "tired";
     return "active";
   };
 
-  if (!gameState.task) return null;
+  const getPowerGlowClass = () => {
+    if (power > 80) return "power-glow-high";
+    if (power > 40) return "power-glow-medium";
+    return "power-glow-low";
+  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
+    <section
+      id="mission"
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-20 sky-section relative"
+    >
+      <CloudsBackground />
+
       <motion.div
-        className="game-card w-full max-w-md mx-auto text-center space-y-6"
+        className="glass-card w-full max-w-lg mx-auto text-center space-y-6 relative z-10"
         initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
         {/* Mission Complete overlay */}
@@ -124,16 +148,10 @@ const GamePage = () => {
                 <p className="text-lg text-muted-foreground">
                   You defeated Procrastination! 🎉
                 </p>
-                <p className="text-foreground font-semibold">
-                  Completed: {gameState.task}
-                </p>
-                <GameButton
-                  size="lg"
-                  onClick={() => navigate("/")}
-                  className="w-full"
-                >
+                <p className="text-foreground font-semibold">Completed: {task}</p>
+                <GameButton size="lg" onClick={onEnd} className="w-full">
                   <Swords className="w-5 h-5" />
-                  New Mission
+                  View Progress
                 </GameButton>
               </motion.div>
             </motion.div>
@@ -150,15 +168,24 @@ const GamePage = () => {
             <Swords className="w-7 h-7 text-primary" />
             Mission in Progress
           </motion.h1>
-          <p className="text-muted-foreground font-medium mt-2">
-            {gameState.task}
-          </p>
+          {task && (
+            <p className="text-muted-foreground font-medium mt-2">{task}</p>
+          )}
         </div>
 
-        {/* Warrior character */}
-        <WarriorCharacter state={getWarriorState()} />
+        {/* Battle Arena */}
+        <div className="relative">
+          <div className={`transition-all duration-500 ${getPowerGlowClass()}`}>
+            <WarriorCharacter state={getWarriorState()} />
+          </div>
+          <MonsterBattle 
+            isActive={isActive && !showTiredMessage} 
+            isPaused={timer.isPaused}
+            power={power}
+          />
+        </div>
 
-        {/* Tired message overlay */}
+        {/* Tired message */}
         <AnimatePresence>
           {showTiredMessage && !isComplete && (
             <motion.div
@@ -203,13 +230,17 @@ const GamePage = () => {
           ) : (
             <GameButton variant="secondary" onClick={timer.pause}>
               <Pause className="w-5 h-5" />
-              Pause
+              Pause Mission
             </GameButton>
           )}
+          <GameButton variant="outline" onClick={onEnd}>
+            <StopCircle className="w-5 h-5" />
+            End Mission
+          </GameButton>
         </div>
       </motion.div>
-    </div>
+    </section>
   );
 };
 
-export default GamePage;
+export default MissionSection;
