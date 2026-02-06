@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { GameProvider, useGame } from "@/context/GameContext";
+import { GameProvider, useGame, getBadges } from "@/context/GameContext";
 import StickyNavigation from "@/components/StickyNavigation";
 import HomeSection from "@/components/sections/HomeSection";
 import MissionSection from "@/components/sections/MissionSection";
@@ -14,14 +14,8 @@ import AboutSection from "@/components/sections/AboutSection";
 
 const queryClient = new QueryClient();
 
-const defaultBadges = [
-  { id: "1", name: "Bronze Defender", icon: "🥉", unlocked: true, effect: "shimmer" as const },
-  { id: "2", name: "Rising Guardian", icon: "⭐", unlocked: true, effect: "glow" as const },
-  { id: "3", name: "Focus Master", icon: "🏆", unlocked: false, effect: "glow" as const },
-];
-
 const AppContent = () => {
-  const { gameState, setTask, setFocusMinutes, startMission, endMission } = useGame();
+  const { gameState, setTask, setFocusMinutes, startMission, endMission, setUserName, incrementRestPeriods } = useGame();
   const [activeSection, setActiveSection] = useState("home");
   const [missionActive, setMissionActive] = useState(false);
   const [restActive, setRestActive] = useState(false);
@@ -82,6 +76,7 @@ const AppContent = () => {
   const handleRestComplete = () => {
     setRestActive(false);
     setMissionActive(true);
+    incrementRestPeriods();
     
     setTimeout(() => {
       scrollToSection("mission");
@@ -167,10 +162,17 @@ const AppContent = () => {
           userName={gameState.userName}
           totalMissions={gameState.completedMissions}
           bestFocusTime={gameState.bestFocusTime}
-          badges={defaultBadges}
+          totalFocusTime={gameState.totalFocusTime}
+          focusStreak={gameState.focusStreak}
+          badges={getBadges(gameState)}
+          onEditProfile={setUserName}
         />
         
-        <AboutSection />
+        <AboutSection
+          completedMissions={gameState.completedMissions}
+          totalRestPeriods={gameState.totalRestPeriods}
+          focusStreak={gameState.focusStreak}
+        />
       </main>
     </div>
   );
