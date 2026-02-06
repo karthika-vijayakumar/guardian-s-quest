@@ -41,6 +41,16 @@ const MissionSection = ({
   const statusIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const halfwayTriggeredRef = useRef(false);
 
+  // Reset state when a new mission starts
+  useEffect(() => {
+    if (isActive && focusMinutes > 0) {
+      setShowTiredMessage(false);
+      setIsComplete(false);
+      halfwayTriggeredRef.current = false;
+      setCurrentStatus(statusMessages[0]);
+    }
+  }, [focusMinutes, isActive]);
+
   const handleHalfway = () => {
     if (halfwayTriggeredRef.current) return;
     halfwayTriggeredRef.current = true;

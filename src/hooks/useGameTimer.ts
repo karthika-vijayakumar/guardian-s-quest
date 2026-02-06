@@ -34,12 +34,23 @@ const useGameTimer = ({
   const completeTriggered = useRef(false);
   const onHalfwayRef = useRef(onHalfway);
   const onCompleteRef = useRef(onComplete);
+  const prevInitialMinutesRef = useRef(initialMinutes);
 
   // Keep refs updated
   useEffect(() => {
     onHalfwayRef.current = onHalfway;
     onCompleteRef.current = onComplete;
   }, [onHalfway, onComplete]);
+
+  // Reset timer when initialMinutes changes (new mission started)
+  useEffect(() => {
+    if (prevInitialMinutesRef.current !== initialMinutes) {
+      setTotalSeconds(initialMinutes * 60);
+      halfwayTriggered.current = false;
+      completeTriggered.current = false;
+      prevInitialMinutesRef.current = initialMinutes;
+    }
+  }, [initialMinutes]);
 
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
