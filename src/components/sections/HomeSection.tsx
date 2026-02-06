@@ -118,20 +118,44 @@ const HomeSection = ({ onStartMission }: HomeSectionProps) => {
           </div>
 
           {/* Time input */}
-          <div className="space-y-2 text-left">
+          <div className="space-y-3 text-left">
             <Label htmlFor="time" className="text-base font-semibold flex items-center gap-2">
               <Clock className="w-4 h-4" />
               Set focus time (minutes)
             </Label>
-            <Input
-              id="time"
-              type="number"
-              min={1}
-              max={120}
-              value={timeInput}
-              onChange={(e) => setTimeInput(Math.max(1, parseInt(e.target.value) || 1))}
-              className="h-14 text-lg rounded-xl bg-secondary/50 border-2 border-transparent focus:border-primary transition-colors"
-            />
+            
+            {/* Preset time buttons */}
+            <div className="flex flex-wrap gap-2">
+              {[5, 10, 15, 25, 30, 45, 60].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setTimeInput(preset)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    timeInput === preset
+                      ? "bg-primary text-primary-foreground shadow-md scale-105"
+                      : "bg-secondary/70 text-foreground hover:bg-secondary hover:scale-102"
+                  }`}
+                >
+                  {preset}m
+                </button>
+              ))}
+            </div>
+            
+            {/* Custom time input */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Or custom:</span>
+              <Input
+                id="time"
+                type="number"
+                min={1}
+                max={120}
+                value={timeInput}
+                onChange={(e) => setTimeInput(Math.max(1, Math.min(120, parseInt(e.target.value) || 1)))}
+                className="h-12 w-24 text-lg rounded-xl bg-secondary/50 border-2 border-transparent focus:border-primary transition-colors text-center"
+              />
+              <span className="text-sm text-muted-foreground">min</span>
+            </div>
           </div>
 
           {/* Start button */}
