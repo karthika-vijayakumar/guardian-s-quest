@@ -17,6 +17,7 @@ interface GameState {
   missionHistory: Mission[];
   userName: string;
   bestFocusTime: number;
+  totalRestPeriods: number;
 }
 
 interface GameContextType {
@@ -27,6 +28,7 @@ interface GameContextType {
   endMission: (completed?: boolean) => void;
   resetGame: () => void;
   setUserName: (name: string) => void;
+  incrementRestPeriods: () => void;
 }
 
 const defaultState: GameState = {
@@ -43,7 +45,72 @@ const defaultState: GameState = {
   ],
   userName: "Warrior",
   bestFocusTime: 30,
+  totalRestPeriods: 2,
 };
+
+// Badge definitions with requirements
+export const getBadges = (state: GameState) => [
+  {
+    id: "1",
+    name: "Bronze Defender",
+    icon: "🥉",
+    unlocked: state.completedMissions >= 1,
+    effect: "shimmer" as const,
+    description: "Complete your first focus mission",
+    progress: Math.min(state.completedMissions, 1),
+    requirement: 1,
+  },
+  {
+    id: "2",
+    name: "Rising Guardian",
+    icon: "⭐",
+    unlocked: state.completedMissions >= 5,
+    effect: "glow" as const,
+    description: "Complete 5 focus missions",
+    progress: Math.min(state.completedMissions, 5),
+    requirement: 5,
+  },
+  {
+    id: "3",
+    name: "Focus Master",
+    icon: "🏆",
+    unlocked: state.completedMissions >= 10,
+    effect: "glow" as const,
+    description: "Complete 10 focus missions",
+    progress: Math.min(state.completedMissions, 10),
+    requirement: 10,
+  },
+  {
+    id: "4",
+    name: "Rest Expert",
+    icon: "🛌",
+    unlocked: state.totalRestPeriods >= 5,
+    effect: "shimmer" as const,
+    description: "Take 5 healthy rest breaks",
+    progress: Math.min(state.totalRestPeriods, 5),
+    requirement: 5,
+  },
+  {
+    id: "5",
+    name: "Streak Hunter",
+    icon: "🔥",
+    unlocked: state.focusStreak >= 3,
+    effect: "glow" as const,
+    description: "Maintain a 3-day focus streak",
+    progress: Math.min(state.focusStreak, 3),
+    requirement: 3,
+  },
+  {
+    id: "6",
+    name: "Time Lord",
+    icon: "⏰",
+    unlocked: state.bestFocusTime >= 45,
+    effect: "glow" as const,
+    description: "Complete a 45+ minute focus session",
+    progress: Math.min(state.bestFocusTime, 45),
+    requirement: 45,
+  },
+];
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -94,6 +161,10 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     setGameState((prev) => ({ ...prev, userName: name }));
   };
 
+  const incrementRestPeriods = () => {
+    setGameState((prev) => ({ ...prev, totalRestPeriods: prev.totalRestPeriods + 1 }));
+  };
+
   return (
     <GameContext.Provider
       value={{
@@ -104,6 +175,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         endMission,
         resetGame,
         setUserName,
+        incrementRestPeriods,
       }}
     >
       {children}
